@@ -1,0 +1,39 @@
+{
+ "accessed": "2026-11-11",
+ "source": "IMOS Animal Tracking Database, https://animaltracking.aodn.org.au",
+ "installation": "NSW DPIRD (Tagged shark listening stations)",
+ "receiverProject": "NSW DPI (Whaler, White and Tiger Shark Program)",
+ "species": "White Shark",
+ "transmitterId": "A69-9001-61077",
+ "tagProject": "NSW DPI Shark Meshing Program",
+ "stationsDetected": 3,
+ "windowDays": 27,
+ "note": "Real white shark detections, unedited; visits merge detections less than 2 h apart at one station.",
+ "visits": [
+  {
+   "station": "cronulla",
+   "start": "2025-06-18T17:05:26.000+0000",
+   "end": "2025-06-18T17:29:25.000+0000",
+   "count": 4
+  },
+  {
+   "station": "stanwell",
+   "start": "2025-06-22T19:02:17.000+0000",
+   "end": "2025-06-22T19:10:04.000+0000",
+   "count": 7
+  },
+  {
+   "station": "bondi",
+   "start": "2025-07-11T08:06:35.000+0000",
+   "end": "2025-07-11T10:35:31.000+0000",
+   "count": 25
+  },
+  {
+   "station": "bondi",
+   "start": "2025-07-15T18:02:33.000+0000",
+   "end": "2025-07-15T18:08:30.000+0000",
+   "count": 2
+  }
+ ],
+ "rawDetectionsInWindow": 38
+}

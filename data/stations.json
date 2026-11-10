@@ -1,0 +1,48 @@
+{
+ "accessed": "2026-11-11",
+ "installationId": 223736177,
+ "stations": [
+  {
+   "key": "bondi",
+   "name": "Bondi",
+   "stationId": 223736190,
+   "lat": -33.9,
+   "lon": 151.28
+  },
+  {
+   "key": "cronulla",
+   "name": "Cronulla",
+   "stationId": 336667162,
+   "lat": -34.05,
+   "lon": 151.16
+  },
+  {
+   "key": "stanwell",
+   "name": "Stanwell Park",
+   "stationId": 336667150,
+   "lat": -34.24,
+   "lon": 151
+  },
+  {
+   "key": "wollongong",
+   "name": "Wollongong",
+   "stationId": 336667225,
+   "lat": -34.43,
+   "lon": 150.91
+  },
+  {
+   "key": "shellharbour",
+   "name": "Shellharbour",
+   "stationId": 336667237,
+   "lat": -34.57,
+   "lon": 150.88
+  },
+  {
+   "key": "kiama",
+   "name": "Kiama",
+   "stationId": 223736262,
+   "lat": -34.68,
+   "lon": 150.86
+  }
+ ]
+}
