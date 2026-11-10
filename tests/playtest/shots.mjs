@@ -19,11 +19,13 @@ async function run(label, mobile) {
   await h.wait(3400); await shot('intro-tagged');
   await h.ev(() => __game.skipIntro());
   await h.wait(300);
-  const goto = async (x, y = -6.5, extra) => { await h.ev(([x, y]) => { __game.teleport(x, y); __game.freeze(true); }, [x, y]); if (extra) await h.ev(extra); await h.wait(1100); };
+  const goto = async (x, y = -6.5, extra) => { await h.ev(([x, y]) => { __game.teleport(x, y); __game.freeze(true); }, [x, y]); if (extra) await extra(); await h.wait(1100); };
   // --- one shot per leg
   const legX = [stationX(0) + 250, stationX(1) + 240, stationX(2) + 230, stationX(3) + 120, stationX(4) + 230];
   for (let i = 0; i < 5; i++) {
-    await goto(legX[i], -6.5 + (i % 2) * 1.2, i => __game.hud.banner(['Bondi to Cronulla', 'Cronulla to Stanwell Park', 'Stanwell Park to Wollongong', 'Wollongong to Shellharbour', 'Shellharbour to Kiama'][i], ['Sandy beaches', 'Sand and low reef', 'Rocky reef and kelp', 'Harbour and shipping lane', 'Five Islands kelp and reef'][i]));
+    await goto(legX[i], -6.5 + (i % 2) * 1.2, () => null);
+    await h.ev(i => __game.hud.banner(['Bondi to Cronulla', 'Cronulla to Stanwell Park', 'Stanwell Park to Wollongong', 'Wollongong to Shellharbour', 'Shellharbour to Kiama'][i], ['Sandy beaches', 'Sand and low reef', 'Rocky reef and kelp', 'Harbour and shipping lane', 'Five Islands kelp and reef'][i]), i);
+    await h.wait(700);
     await shot(`leg${i + 1}`);
   }
   // --- PING: fly into the Wollongong dome and let the sim ping

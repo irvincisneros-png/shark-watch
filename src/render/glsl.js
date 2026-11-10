@@ -41,7 +41,7 @@ vec3 underwater(vec3 albedo, vec3 N, vec3 wp, float causticAmt, float rim, float
   col += albedo * sunCol * causticAmt * causticLight(wp) * uCaustic * (0.2 + 0.8 * up) * 0.5;
   col += uTopColor * rim * 0.18;
   float dist = length(wp - cameraPosition);
-  float f = 1.0 - exp(-max(0.0, dist - 24.0) * uFogDensity * fogMult);
+  float f = 1.0 - exp(-max(0.0, dist - 33.0) * uFogDensity * 1.25 * fogMult);
   f = max(f, 0.07 * fogMult);
   vec3 fogc = mix(uDeepColor, uFogColor, smoothstep(-16.0, -1.0, wp.y)) ;
   fogc = mix(fogc, uTopColor, smoothstep(-6.0, 0.0, wp.y) * 0.55);
