@@ -85,7 +85,7 @@ export class WorldObjects {
       fragmentShader: `${COMMON_FRAG} varying vec3 vN; varying vec3 vWP; void main(){ vec3 V = normalize(cameraPosition - vWP); float fr = pow(1.0 - abs(dot(normalize(vN), V)), 1.8); vec3 base = underwater(vec3(0.9, 0.93, 0.96), normalize(vN), vWP, 0.4, fr * 0.4, 1.0); float crinkle = vnoise(vWP.xy * 5.0 + uTime * 0.1); gl_FragColor = vec4(base + fr * 0.2, 0.42 + fr * 0.4 + crinkle * 0.1); }`,
     });
     this.hullMat = makeHullMaterial();
-    this.propGeo = propellerGeometry(1.3); this.rudderGeo = rudderGeometry(1.5, 2.6);
+    this.propGeo = propellerGeometry(1.5); this.rudderGeo = rudderGeometry(1.25, 2.5);
     this.propMat = makeMaterial({ vertexColors: true, side: THREE.DoubleSide, caustic: 0.9, rim: 0.5, fogMult: 0.9 });
     this.mkNetGeoCache = new Map();
   }

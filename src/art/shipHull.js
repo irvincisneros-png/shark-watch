@@ -41,7 +41,7 @@ export function hullGeometry(L, B, draft) {
   hull.setIndex(idx); hull.computeVertexNormals();
   const parts = [clean(hull)];
   // bulbous bow
-  const bulb = new THREE.SphereGeometry(1, 16, 10); bulb.scale(2.7, 0.95, 1.15); bulb.translate(-L / 2 - 0.25, -draft * 0.68, 0);
+  const bulb = new THREE.SphereGeometry(1, 16, 10); bulb.scale(2.5, 0.85, 1.05); bulb.translate(-L / 2 + 0.8, -draft * 0.5, 0);
   parts.push(clean(bulb));
   // propeller boss / skeg under the counter
   const boss = new THREE.CylinderGeometry(0.2, 0.62, 3.4, 10, 1); boss.rotateZ(Math.PI / 2); boss.translate(L / 2 - 1.0 - 0.5, -draft * 0.72, 0);

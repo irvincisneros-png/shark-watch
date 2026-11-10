@@ -111,6 +111,7 @@ export class Surface {
           col += vec3(0.7, 0.98, 1.0) * web * (0.06 + 0.2 * win);
           col += vec3(0.85, 1.0, 1.0) * smoothstep(0.22, 0.42, slope) * (0.12 + 0.28 * win);
           col += (vec3(0.8, 0.95, 1.0) * smoothstep(0.62, 0.84, h0) * 0.35);
+          col *= 0.88;
           float dist = length(vWP - cameraPosition);
           float f = 1.0 - exp(-max(0.0, dist - 40.0) * uFogDensity * 0.2);
           col = mix(col, mix(uFogColor, uTopColor, 0.55), f * 0.8);

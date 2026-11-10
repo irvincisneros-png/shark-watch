@@ -11,63 +11,64 @@ import { fbm1, hash1 } from '../logic/rng.js';
 
 const PAR = 0.42; // landmark parallax
 const NOISE_ONLY = COMMON_FRAG.split('// Moving web')[0];
-const HAZE = [0.46, 0.28, 0.14, 0.04];   // far -> near
+const HAZE = [0.4, 0.23, 0.11, 0.03];   // far -> near
 
 // accent colours (lit materials: lighthouses, walls, sand, rust)
-const ACC = { WHITE: 0xf4f5f1, SAND: 0xe0cf9f, SANDSTONE: 0xc09a6c, AQUA: 0x58c4d6, CONC: 0xcfd1cc, RUST: 0xa24f33, RED: 0xcf4430, DARK: 0x2c3a40, ROOF: 0xb5503a, GRASS: 0x5f8a4a, STACK: 0xdedad2 };
+const ACC = { WHITE: 0xf4f5f1, SAND: 0xe0cf9f, SANDSTONE: 0xb08f68, AQUA: 0x58c4d6, CONC: 0xcfd1cc, RUST: 0xa24f33, RED: 0xcf4430, DARK: 0x2c3a40, ROOF: 0xb5503a, GRASS: 0x5f8a4a, STACK: 0xdedad2 };
 
-function silhouetteMaterial(haze, acc) {
-  const m = new THREE.ShaderMaterial({
-    uniforms: {
-      uLand: { value: new THREE.Color(0x56717a) }, uHor: { value: new THREE.Color(0xd0e4ec) }, uHaze: { value: haze },
-      uAcc: { value: new THREE.Color(acc ?? 0xffffff) }, uAccMix: { value: acc == null ? 0 : 1 }, ...SKY_CLIP,
-    },
-    vertexShader: `attribute float aT; varying float vT; varying vec2 vP; void main(){ vT = aT; vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+function silhouetteMaterial() {
+  return new THREE.ShaderMaterial({
+    uniforms: { uLand: { value: new THREE.Color(0x56717a) }, uHor: { value: new THREE.Color(0xd0e4ec) }, ...SKY_CLIP },
+    vertexShader: `attribute float aT; attribute float aHz; attribute vec4 aAc; varying float vT; varying float vHz; varying vec4 vAc; varying vec2 vP;
+      void main(){ vT = aT; vHz = aHz; vAc = aAc; vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
     fragmentShader: `${NOISE_ONLY}${SKY_CLIP_GLSL}
-      uniform vec3 uLand; uniform vec3 uHor; uniform float uHaze; uniform vec3 uAcc; uniform float uAccMix; varying float vT; varying vec2 vP;
+      uniform vec3 uLand; uniform vec3 uHor; varying float vT; varying float vHz; varying vec4 vAc; varying vec2 vP;
       void main(){
         if (gl_FragCoord.y < skyEdge()) discard;
         float tex = fbm2(vP * vec2(5.5, 7.0) + 3.0);
         float speck = vnoise(vP * vec2(38.0, 30.0));
         vec3 land = uLand * (0.58 + 0.5 * vT) * (0.84 + 0.34 * tex) * (0.94 + 0.12 * speck);
         land = mix(land, land * vec3(1.15, 1.0, 0.8), smoothstep(0.6, 0.9, tex) * 0.5);       // sunlit scrub / sandstone patches
-        vec3 acc = uAcc * (0.78 + 0.26 * vT) * (0.97 + 0.06 * speck);
-        vec3 c = mix(land, acc, uAccMix);
+        vec3 acc = vAc.rgb * (0.78 + 0.26 * vT) * (0.97 + 0.06 * speck);
+        vec3 c = mix(land, acc, vAc.a);
         // aerial perspective: distance haze, plus sea mist thickening towards the base
-        c = mix(c, uHor, uHaze + 0.3 * (1.0 - vT) * (1.0 - uHaze));
+        c = mix(c, uHor, vHz + 0.3 * (1.0 - vT) * (1.0 - vHz));
         gl_FragColor = vec4(c, 1.0);
       }`,
     side: THREE.DoubleSide,
   });
-  return m;
 }
 
 /** Accumulates polygons and merges them into one mesh per material (so the whole coast is a handful of draw calls). */
 class Collector {
-  constructor() { this.by = new Map(); }
-  add(mat, pts, z, h, x = 0, y = 0) {
-    let e = this.by.get(mat); if (!e) { e = { pos: [], aT: [], idx: [], n: 0 }; this.by.set(mat, e); }
+  constructor() { this.pos = []; this.aT = []; this.aHz = []; this.aAc = []; this.idx = []; this.n = 0; }
+  add(pts, z, h, x, y, haze, accHex) {
     const contour = pts.map(p => new THREE.Vector2(p[0], p[1]));
     const tri = THREE.ShapeUtils.triangulateShape(contour, []);
-    for (const p of pts) { e.pos.push(p[0] + x, p[1] + y, z); e.aT.push(Math.max(0, Math.min(1, p[1] / h))); }
-    for (const t of tri) e.idx.push(e.n + t[0], e.n + t[1], e.n + t[2]);
-    e.n += pts.length;
-  }
-  build(parent) {
-    for (const [mat, e] of this.by) {
-      const g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.Float32BufferAttribute(e.pos, 3));
-      g.setAttribute('aT', new THREE.Float32BufferAttribute(e.aT, 1));
-      g.setIndex(e.idx);
-      const m = new THREE.Mesh(g, mat); m.frustumCulled = false; parent.add(m);
+    const c = accHex == null ? null : new THREE.Color(accHex);
+    for (const p of pts) {
+      this.pos.push(p[0] + x, p[1] + y, z); this.aT.push(Math.max(0, Math.min(1, p[1] / h))); this.aHz.push(HAZE[haze]);
+      this.aAc.push(c ? c.r : 1, c ? c.g : 1, c ? c.b : 1, c ? 1 : 0);
     }
+    for (const t of tri) this.idx.push(this.n + t[0], this.n + t[1], this.n + t[2]);
+    this.n += pts.length;
+  }
+  build(parent, mat) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
+    g.setAttribute('aT', new THREE.Float32BufferAttribute(this.aT, 1));
+    g.setAttribute('aHz', new THREE.Float32BufferAttribute(this.aHz, 1));
+    g.setAttribute('aAc', new THREE.Float32BufferAttribute(this.aAc, 4));
+    g.setIndex(this.idx);
+    const m = new THREE.Mesh(g, mat); m.frustumCulled = false; parent.add(m);
   }
 }
 
 /** Ridge polygon: x0..x1, height fn(x) >= 0. */
 function ridge(x0, x1, hfn, step = 1) {
   const pts = [[x0, -0.5]];
-  for (let x = x0; x <= x1 + 1e-6; x += step) pts.push([x, hfn(x)]);
+  const tp = Math.min(30, (x1 - x0) * 0.3), ss = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
+  for (let x = x0; x <= x1 + 1e-6; x += step) pts.push([x, hfn(x) * (0.12 + 0.88 * ss(x0, x0 + tp, x) * ss(x1, x1 - tp, x))]);   // ends taper so no sheer edges show
   pts.push([x1, -0.5]);
   return pts;
 }
@@ -115,8 +116,8 @@ export class SkyBand {
     }));
     sky.frustumCulled = false; sky.renderOrder = -10;
     this.scene.add(sky); this.sky = sky;
-    this.mats = HAZE.map(h => silhouetteMaterial(h, null));
-    this.accMats = {};
+    this.mat = silhouetteMaterial();
+    this.hazeCol = new THREE.Color();
     this.layer = new THREE.Group(); this.scene.add(this.layer);   // parallax landmarks
     this.live = new THREE.Group(); this.scene.add(this.live);     // lane-depth things: buoy masts, surfers, ship
     this.buildLandmarks();
@@ -125,13 +126,12 @@ export class SkyBand {
   }
 
   at(k, off) { return stationX(k) * PAR + off; }
-  acc(haze, name) { const key = haze + name; return this.accMats[key] ??= silhouetteMaterial(HAZE[haze], ACC[name]); }
 
   buildLandmarks() {
     const C = new Collector();
     const A = (k, off) => this.at(k, off);
-    const land = (haze, pts, z, h, x = 0, y = 0) => C.add(this.mats[haze], pts, z, h, x, y);
-    const accent = (name, haze, pts, z, h, x = 0, y = 0) => C.add(this.acc(haze, name), pts, z, h, x, y);
+    const land = (haze, pts, z, h, x = 0, y = 0) => C.add(pts, z, h, x, y, haze, null);
+    const accent = (name, haze, pts, z, h, x = 0, y = 0) => C.add(pts, z, h, x, y, haze, ACC[name]);
     // a block of coastal apartments: varied heights, stepped tops, balcony bands
     const block = (x, w, h, haze, z, y = 0, name = 'CONC') => {
       accent(name, haze, h > 1.3 && w > 0.9 ? [[0, 0], [w, 0], [w, h * 0.85], [w * 0.7, h * 0.85], [w * 0.7, h], [w * 0.2, h], [w * 0.2, h * 0.9], [0, h * 0.9]] : rect(0, 0, w, h), z, h, x, y);
@@ -143,8 +143,8 @@ export class SkyBand {
     for (let i = -1; i < 6; i++) {
       const x0 = this.at(i, -60), x1 = this.at(i + 1, 60), seed = i * 17.3;
       const env = x => 0.5 + 0.5 * Math.sin((x - x0) / (x1 - x0) * 3.14);
-      land(0, ridge(x0, x1, x => 0.45 + 1.25 * fbm1(x * 0.055 + seed, 3) * (0.55 + 0.6 * env(x)), 1), -9, 3);
-      land(1, ridge(x0, x1, x => 0.3 + 0.85 * fbm1(x * 0.09 + seed + 40, 3) * (0.5 + 0.7 * env(x)), 1), -7, 3);
+      land(0, ridge(x0, x1, x => 0.35 + 0.95 * fbm1(x * 0.06 + seed, 3) * (0.55 + 0.6 * env(x)) + 0.12 * fbm1(x * 0.5, 2), 0.8), -9, 3);
+      land(1, ridge(x0, x1, x => 0.25 + 0.7 * fbm1(x * 0.1 + seed + 40, 3) * (0.5 + 0.7 * env(x)) + 0.08 * fbm1(x * 0.7, 2), 0.7), -7, 3);
     }
     // ---- Bondi: beach-front apartments, sandstone headland and the Icebergs pool complex
     {
@@ -269,13 +269,13 @@ export class SkyBand {
       for (let i = 0; i < 5; i++) roofHouse(x + 7 + i * 2.7 + hash1(i) * 0.6, 0.55 + hash1(i + 2) * 0.3, 0.3 + hash1(i) * 0.2, 3, -2.1, hf(x + 7 + i * 2.7) - 0.05);
       this.blowholeX = x + 7;
     }
-    C.build(this.layer);
+    C.build(this.layer, this.mat);
     // distant gulls
     this.gulls = [];
     const gullGeo = new THREE.ShapeGeometry(new THREE.Shape([[-0.28, 0], [-0.1, 0.1], [0, 0.03], [0.1, 0.1], [0.28, 0], [0.1, 0.05], [0, -0.03], [-0.1, 0.05]].map(p => new THREE.Vector2(...p))));
-    gullGeo.setAttribute('aT', new THREE.BufferAttribute(new Float32Array(gullGeo.attributes.position.count), 1));
+    { const n = gullGeo.attributes.position.count; gullGeo.setAttribute('aT', new THREE.BufferAttribute(new Float32Array(n), 1)); gullGeo.setAttribute('aHz', new THREE.BufferAttribute(new Float32Array(n).fill(HAZE[3]), 1)); gullGeo.setAttribute('aAc', new THREE.BufferAttribute(new Float32Array(n * 4), 4)); }
     for (let i = 0; i < 6; i++) {
-      const m = new THREE.Mesh(gullGeo, this.mats[3]);
+      const m = new THREE.Mesh(gullGeo, this.mat);
       m.userData = { x: this.at(i, 20 + hash1(i) * 60), y: 1.7 + hash1(i * 3) * 1.1, s: 0.4 + hash1(i * 5) * 0.4, ph: hash1(i * 9) * 6 };
       this.layer.add(m); this.gulls.push(m);
     }
@@ -407,9 +407,9 @@ export class SkyBand {
     this.sky.material.uniforms.uHor.value.copy(pal.skyHor);
     this.meniscus.material.uniforms.uTop.value.copy(pal.top);
     const green = new THREE.Color(0.1, 0.25, 0.17);
-    const all = [...this.mats, ...Object.values(this.accMats)];
-    for (const m of all) { m.uniforms.uHor.value.copy(pal.skyHor); }
-    for (const m of this.mats) m.uniforms.uLand.value.copy(pal.land).lerp(green, 0.7).multiplyScalar(0.8);
+    this.hazeCol.copy(pal.skyHor).lerp(pal.skyTop, 0.38);
+    this.mat.uniforms.uHor.value.copy(this.hazeCol);
+    this.mat.uniforms.uLand.value.copy(pal.land).lerp(green, 0.7).multiplyScalar(0.8);
     const t = U.uTime.value;
     for (const g of this.gulls) { const u = g.userData; g.position.set(u.x + Math.sin(t * 0.2 + u.ph) * 2, u.y + Math.sin(t * 0.9 + u.ph) * 0.12, -1); g.scale.set(u.s, u.s * (0.6 + 0.4 * Math.sin(t * 3 + u.ph)), 1); }
     // blowhole spout, only near Kiama

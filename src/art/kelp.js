@@ -130,14 +130,14 @@ export function kelp(seed) {
 export function seagrass(seed) {
   const rnd = mulberry32(seed);
   const parts = [];
-  const n = 12 + Math.floor(rnd() * 5);
+  const n = 18 + Math.floor(rnd() * 6);
   for (let b = 0; b < n; b++) {
     const ang = rnd() * Math.PI * 2, lean = 0.1 + rnd() * 0.5, H = 0.55 + rnd() * 0.5;
     const dir = new THREE.Vector3(Math.cos(ang) * lean, 1, Math.sin(ang) * lean).normalize();
     const pts = [], ws = [];
     const o = new THREE.Vector3((rnd() - 0.5) * 0.16, 0, (rnd() - 0.5) * 0.16);
     const N = seg(4, 3);
-    for (let i = 0; i <= N; i++) { const t = i / N; pts.push(o.clone().addScaledVector(dir, t * H).add(new THREE.Vector3(0, -t * t * 0.08, 0)).add(new THREE.Vector3(Math.cos(ang) * t * t * 0.14, 0, Math.sin(ang) * t * t * 0.14))); ws.push(0.07 * (1 - t * 0.55)); }
+    for (let i = 0; i <= N; i++) { const t = i / N; pts.push(o.clone().addScaledVector(dir, t * H).add(new THREE.Vector3(0, -t * t * 0.08, 0)).add(new THREE.Vector3(Math.cos(ang) * t * t * 0.14, 0, Math.sin(ang) * t * t * 0.14))); ws.push(0.085 * (1 - t * 0.5)); }
     const side = new THREE.Vector3(-Math.sin(ang), 0, Math.cos(ang));
     const g1 = 0.7 + rnd() * 0.4;
     parts.push(blade(pts, ws, side, t => [0.09 * g1 + t * 0.1, 0.22 * g1 + t * 0.13, 0.08 * g1 + t * 0.04], { across: 2, rib: 0, ruffle: 0 }));
