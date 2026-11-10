@@ -50,8 +50,8 @@ export function drawMap(canvas, { mode, rows, missed = [], realVisits = [] }) {
   const seen = {};
   seq.filter(s => !s.bonus).forEach(s => {
     const k = seen[s.i] = (seen[s.i] ?? 0) + 1;
-    const [x, y] = P[s.i], ox = -70 - (k - 1) * 60, oy = -(k - 1) * 6;
-    g.beginPath(); g.arc(x + ox * 0.35, y + oy, 19, 0, 6.283); g.fillStyle = col; g.fill(); g.lineWidth = 2; g.strokeStyle = '#06222f'; g.stroke();
-    g.fillStyle = '#06222f'; g.font = '800 22px Trebuchet MS, sans-serif'; g.textAlign = 'center'; g.fillText(String(s.n), x + ox * 0.35, y + oy + 8); g.textAlign = 'left';
+    const [x, y] = P[s.i], ox = -36 - (k - 1) * 44, oy = (k - 1) % 2 ? -22 : 0; // fan stacked visits out so numbers stay readable
+    g.beginPath(); g.arc(x + ox, y + oy, 19, 0, 6.283); g.fillStyle = col; g.fill(); g.lineWidth = 2; g.strokeStyle = '#06222f'; g.stroke();
+    g.fillStyle = '#06222f'; g.font = '800 22px Trebuchet MS, sans-serif'; g.textAlign = 'center'; g.fillText(String(s.n), x + ox, y + oy + 8); g.textAlign = 'left';
   });
 }

@@ -85,7 +85,7 @@ export function buildFish(look) {
   const bodyLen = L * (1 - tailFrac);
   const C = cosy();
   const depth = look.depth * L, width = look.width * L * (C ? 1.18 : 1);
-  const RINGS = C ? 32 : 26, SEG = C ? 24 : 18;
+  const RINGS = look.lod ? 12 : C ? 32 : 26, SEG = look.lod ? 8 : C ? 24 : 18;
   const pos = [], uv = [], idx = [], fin = []; // fin: (k along fin base, 0 base..1 edge); body (0,-1); eye (0,-2)
   const x0 = -L / 2 + tailFrac * L;
   const superE = look.boxy ?? 2; // cross-section superellipse exponent

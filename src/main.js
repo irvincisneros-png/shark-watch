@@ -7,6 +7,7 @@ import { stationList, LEGS, START_X, END_X } from './logic/route.js';
 import { INTRO_CAPTIONS, HINTS, LINES, FACTS } from './logic/content.js';
 import { loadBest } from './logic/score.js';
 import { U } from './render/uniforms.js';
+import { SKY_CLIP } from './render/skyclip.js';
 import { makePalette, paletteAt } from './render/palettes.js';
 import { Backdrop, GodRays, Surface, SkyBand } from './render/env.js';
 import { Terrain } from './render/terrain.js';
@@ -30,9 +31,9 @@ THREE.Material.prototype.onBeforeCompile = function (shader) {
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const TIERS = {
-  low: { name: 'low', terrainRes: 30, rockDetail: 1, kelpMul: 0.35, rockMul: 0.5, ambientFish: 0, snow: 200, rays: 3, dpr: 1, kelpDetail: 0.5 },
-  medium: { name: 'medium', terrainRes: 44, rockDetail: 2, kelpMul: 0.7, rockMul: 0.8, ambientFish: 28, snow: 350, rays: 5, dpr: 1.5, kelpDetail: 0.8 },
-  high: { name: 'high', terrainRes: 60, rockDetail: 2, kelpMul: 1, rockMul: 1, ambientFish: 56, snow: 600, rays: 8, dpr: 2, kelpDetail: 1 },
+  low: { name: 'low', terrainRes: 30, rockDetail: 2, kelpMul: 0.35, rockMul: 0.5, ambientFish: 0, snow: 200, rays: 3, dpr: 1, kelpDetail: 0.5 },
+  medium: { name: 'medium', terrainRes: 44, rockDetail: 3, kelpMul: 0.7, rockMul: 0.8, ambientFish: 28, snow: 350, rays: 5, dpr: 1.5, kelpDetail: 0.8 },
+  high: { name: 'high', terrainRes: 60, rockDetail: 4, kelpMul: 1, rockMul: 1, ambientFish: 56, snow: 600, rays: 8, dpr: 2, kelpDetail: 1 },
 };
 function pickTier() {
   const q = params.get('q'); if (TIERS[q]) return TIERS[q];
@@ -43,7 +44,7 @@ function pickTier() {
 }
 const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch { /* blocked */ } } };
 
-const FOV = 30, CAM_Z = 34, CAM_Y0 = -5.8;
+const FOV = 30, CAM_Z = 34, CAM_Y0 = -5.0;   // camera sits a little high so the strip above the waterline is tall enough to show landmarks below the HUD
 const tier = pickTier();
 setKelpDetail(tier.kelpDetail);
 
@@ -316,13 +317,19 @@ class Game {
     const r = this.renderer, W = this.W, H = this.H, cam = this.camera;
     const v = new THREE.Vector3(this.camX, 0, 0).project(cam);
     const wl = Math.max(0, Math.min(H, Math.round((1 - v.y) / 2 * H)));
+    const padPx = 12, dpr = r.getPixelRatio();
     const bandUnits = Math.max(0.5, wl / this.ppu), bandW = W / this.ppu;
-    this.sky.update(this.camX, bandW, bandUnits, this.pal, 0);
-    r.setScissorTest(true);
-    if (wl > 0) { r.setViewport(0, H - wl, W, wl); r.setScissor(0, H - wl, W, wl); r.clear(true, true, true); r.render(this.sky.scene, this.sky.cam); }
-    r.setViewport(0, 0, W, H);
-    r.setScissor(0, 0, W, Math.max(1, H - wl)); r.clear(true, true, true); r.render(this.scene, cam);
-    r.setScissorTest(false);
+    this.sky.update(this.camX, bandW, bandUnits, this.pal, padPx / this.ppu);
+    SKY_CLIP.uWL.value = (H - wl) * dpr; SKY_CLIP.uDpr.value = dpr; SKY_CLIP.uTimeS.value = this.t;
+    r.info.autoReset = false; r.info.reset();
+    // the water scene fills the frame; the sky strip is drawn over its top, with a rippling waterline edge
+    r.setScissorTest(false); r.setViewport(0, 0, W, H); r.clear(true, true, true); r.render(this.scene, cam);
+    if (wl > 0) {
+      const h = Math.min(H, wl + padPx);
+      r.setScissorTest(true); r.setViewport(0, H - h, W, h); r.setScissor(0, H - h, W, h);
+      r.clearDepth(); r.render(this.sky.scene, this.sky.cam);
+      r.setScissorTest(false); r.setViewport(0, 0, W, H);
+    }
   }
 }
 

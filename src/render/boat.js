@@ -2,6 +2,7 @@
 // scene, the cabin and scientists live in the sky band.
 import * as THREE from 'three';
 import { makeMaterial } from './materials.js';
+import { clipToWaterline } from './skyclip.js';
 
 export class Boat {
   constructor(scene, sky) {
@@ -17,7 +18,7 @@ export class Boat {
     scene.add(this.water);
     // above water
     this.air = new THREE.Group();
-    const m = c => new THREE.MeshBasicMaterial({ color: c });
+    const m = c => clipToWaterline(new THREE.MeshBasicMaterial({ color: c }));
     const deck = new THREE.Mesh(new THREE.PlaneGeometry(11.8, 0.55), m(0xe9eff1)); deck.position.set(0.2, 0.28, 0);
     const cabin = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 1.5), m(0xf4f6f6)); cabin.position.set(2.2, 1.3, 0.01);
     const win = new THREE.Mesh(new THREE.PlaneGeometry(2.9, 0.5), m(0x203845)); win.position.set(2.2, 1.55, 0.02);

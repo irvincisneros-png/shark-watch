@@ -11,6 +11,8 @@ import { stationList, floorY } from '../logic/route.js';
 import { domeOf, DOME } from '../logic/dome.js';
 import { SHIP_DIMS } from '../logic/sim.js';
 import { hash1 } from '../logic/rng.js';
+import { makeHullMaterial } from './hullMaterial.js';
+import { hullGeometry, propellerGeometry, rudderGeometry } from '../art/shipHull.js';
 
 export function glowTexture() {
   const c = document.createElement('canvas'); c.width = c.height = 128;
@@ -82,7 +84,9 @@ export class WorldObjects {
       vertexShader: `uniform float uTime; varying vec3 vN; varying vec3 vWP; void main(){ vec3 p = position; float w = sin(uTime * 2.3 + p.y * 5.0 + modelMatrix[3].x) * 0.1 + sin(uTime * 3.1 + p.x * 7.0) * 0.05; p += normal * w; p.y *= 1.0 + 0.15 * sin(uTime * 1.6 + modelMatrix[3].x); vec4 w4 = modelMatrix * vec4(p, 1.0); vWP = w4.xyz; vN = normalize(mat3(modelMatrix) * normal); gl_Position = projectionMatrix * viewMatrix * w4; }`,
       fragmentShader: `${COMMON_FRAG} varying vec3 vN; varying vec3 vWP; void main(){ vec3 V = normalize(cameraPosition - vWP); float fr = pow(1.0 - abs(dot(normalize(vN), V)), 1.8); vec3 base = underwater(vec3(0.9, 0.93, 0.96), normalize(vN), vWP, 0.4, fr * 0.4, 1.0); float crinkle = vnoise(vWP.xy * 5.0 + uTime * 0.1); gl_FragColor = vec4(base + fr * 0.2, 0.42 + fr * 0.4 + crinkle * 0.1); }`,
     });
-    this.hullMat = makeMaterial({ vertexColors: true, caustic: 0.2, rim: 0.2, fogMult: 0.9 });
+    this.hullMat = makeHullMaterial();
+    this.propGeo = propellerGeometry(1.3); this.rudderGeo = rudderGeometry(1.5, 2.6);
+    this.propMat = makeMaterial({ vertexColors: true, side: THREE.DoubleSide, caustic: 0.9, rim: 0.5, fogMult: 0.9 });
     this.mkNetGeoCache = new Map();
   }
 
@@ -238,33 +242,15 @@ export class WorldObjects {
   }
 
   buildShip(v, e) {
-    const L = e.len, B = 7.2, d = SHIP_DIMS.draft;
-    const s = new THREE.Shape();
-    s.moveTo(-L / 2, 0); s.lineTo(-L / 2, -1.1); s.bezierCurveTo(-L / 2 + 1.0, -2.6, -L / 2 + 3.6, d, -L / 2 + 6.5, d);
-    s.lineTo(L / 2 - 4, d); s.bezierCurveTo(L / 2 - 1.5, d, L / 2, -1.9, L / 2, -1.4); s.lineTo(L / 2, 0); s.closePath();
-    const geo = new THREE.ExtrudeGeometry(s, { depth: B, bevelEnabled: true, bevelThickness: 0.5, bevelSize: 0.5, bevelSegments: 3, curveSegments: 20 });
-    geo.translate(0, 0, -B / 2);
-    const p = geo.attributes.position, col = new Float32Array(p.count * 3);
-    for (let i = 0; i < p.count; i++) {
-      const y = p.getY(i), x = p.getX(i);
-      const noise = hash1(Math.floor(x * 0.9) * 31 + Math.floor(y * 1.4)) * 0.08;
-      let c;
-      if (y > -0.35) c = [0.09, 0.11, 0.13];
-      else if (y > -0.55) c = [0.88, 0.88, 0.85];          // waterline stripe
-      else c = [0.5 + noise, 0.11, 0.09];                    // anti-fouling red
-      col[i * 3] = c[0]; col[i * 3 + 1] = c[1]; col[i * 3 + 2] = c[2];
-    }
-    geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.deleteAttribute('uv');
-    const hull = new THREE.Mesh(geo, this.hullMat);
+    const L = e.len, B = 7.2, d = -SHIP_DIMS.draft;
+    const hull = new THREE.Mesh(hullGeometry(L, B, d), this.hullMat);
+    hull.frustumCulled = false;
     v.g.add(hull);
-    // propeller, hub and rudder
-    const prop = new THREE.Group(); prop.position.set(L / 2 - 1.4, -2.55, 0);
-    const bm = makeMaterial({ tint: 0xb98a3a, caustic: 0.8, rim: 0.4, side: THREE.DoubleSide });
-    for (let i = 0; i < 4; i++) { const bl = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.9, 0.5), bm); bl.position.y = 1.0; bl.rotation.x = 0.5; const arm = new THREE.Group(); arm.rotation.x = i * Math.PI / 2; arm.add(bl); prop.add(arm); }
-    const hub = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 8), bm); prop.add(hub);
-    prop.rotation.y = 0; v.extra.prop = prop;
-    // The prop axis is along x; blades spin around x.
-    const rudder = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.2, 1.6), makeMaterial({ tint: 0x6b1a14, caustic: 0.2 })); rudder.position.set(L / 2 + 0.3, -2.0, 0);
+    // propeller (spins round the ship's x axis), boss-mounted behind the keel line, with the rudder behind it
+    const prop = new THREE.Group(); prop.position.set(L / 2 + 0.2, -d * 0.72, 0);
+    prop.add(new THREE.Mesh(this.propGeo, this.propMat));
+    v.extra.prop = prop;
+    const rudder = new THREE.Mesh(this.rudderGeo, this.hullMat); rudder.position.set(L / 2 + 0.85, -0.75, 0);
     v.g.add(prop, rudder);
     // prop wash plane (matches the sim's danger ellipse)
     const rx = SHIP_DIMS.propRx, ry = SHIP_DIMS.propRy;
@@ -396,7 +382,9 @@ export class WorldObjects {
     v.g.position.set(e.x, 0, 0);
     v.extra.prop.rotation.x = t * 14;
     this.sky.ship.visible = true; this.sky.ship.position.set(e.x, 0, -0.5);
-    if (Math.random() < 0.7) this.fx.bubbleBurst({ x: e.x + e.len / 2 - 3, y: -2.6, z: 0.3 }, 1, 1.4, 0.16);
+    // churning wash: bubbles spiral off the propeller disc and stream astern
+    const px = e.x + e.len / 2 + 0.6;
+    for (let k = 0; k < 3; k++) { const a = Math.random() * 6.283, r = 1.0 + Math.random() * 1.1; this.fx.bubbles.spawn(px + Math.random() * 1.2, -2.45 + Math.sin(a) * r, Math.cos(a) * r * 0.7, 1.5 + Math.random() * 2.2, Math.sin(a) * 0.5, Math.cos(a) * 0.4, 3.2, 0.1 + Math.random() * 0.2, 0.92, 0.98, 1, 0.8, 1); }
   }
 
   updatePickup(v, e, t) {

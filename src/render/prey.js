@@ -28,7 +28,7 @@ export class PreyView {
     this.amb = [];
     const n = tier.ambientFish;
     if (n) {
-      const built = buildFish(PREY_LOOKS.salmon), tex = built.texture;
+      const built = buildFish({ ...PREY_LOOKS.salmon, lod: 1 }), tex = built.texture;
       const mat = makeMaterial({ map: tex, swim: true, len: built.length, side: THREE.DoubleSide, rim: 0.2, caustic: 0.2, fogMult: 1.2 });
       const geo = built.geometry;
       this.ambSwim = new Float32Array(n * 2);

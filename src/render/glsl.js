@@ -7,6 +7,13 @@ float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f*f*(3.0-2.0*f);
   return mix(mix(hash21(i), hash21(i+vec2(1,0)), u.x), mix(hash21(i+vec2(0,1)), hash21(i+vec2(1,1)), u.x), u.y); }
 float fbm2(vec2 p){ float s = 0.0, a = 0.5; for (int i = 0; i < 4; i++){ s += a * vnoise(p); p = p * 2.03 + 17.1; a *= 0.5; } return s; }
 
+// 3D value noise (rocks, hull plating): cheap, stable in world space.
+float hash31(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float vnoise3(vec3 p){ vec3 i = floor(p), f = fract(p); vec3 u = f*f*(3.0-2.0*f);
+  return mix(mix(mix(hash31(i), hash31(i+vec3(1,0,0)), u.x), mix(hash31(i+vec3(0,1,0)), hash31(i+vec3(1,1,0)), u.x), u.y),
+             mix(mix(hash31(i+vec3(0,0,1)), hash31(i+vec3(1,0,1)), u.x), mix(hash31(i+vec3(0,1,1)), hash31(i+vec3(1,1,1)), u.x), u.y), u.z); }
+float fbm3(vec3 p){ float s = 0.0, a = 0.5; for (int i = 0; i < 3; i++){ s += a * vnoise3(p); p = p * 2.07 + 11.3; a *= 0.5; } return s; }
+
 // Moving web of light lines (cell edges of animated Voronoi), after DeepSwell's cosy caustics.
 vec2 cHash2(vec2 p){ p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3))); return fract(sin(p) * 43758.5453); }
 float caustic(vec2 p, float t){
@@ -25,7 +32,7 @@ float causticLight(vec3 wp){
 }
 
 // Hemisphere + sun light, depth absorption, caustics, rim and fog. N is a world-space normal.
-vec3 underwater(vec3 albedo, vec3 N, vec3 wp, float causticAmt, float rim, float fogMult){
+vec3 underwaterX(vec3 albedo, vec3 N, vec3 wp, float causticAmt, float rim, float fogMult, vec3 extra){
   float up = N.y * 0.5 + 0.5;
   float depth = clamp(-wp.y, 0.0, 40.0);
   float sunL = exp(-depth * uAbsorb);
@@ -40,6 +47,7 @@ vec3 underwater(vec3 albedo, vec3 N, vec3 wp, float causticAmt, float rim, float
   col *= mix(vec3(1.0), vec3(0.76, 0.93, 1.0), clamp(depth * 0.03, 0.0, 0.5));
   col += albedo * sunCol * causticAmt * causticLight(wp) * uCaustic * (0.2 + 0.8 * up) * 0.5;
   col += uTopColor * rim * 0.18;
+  col += extra * sunL;
   float dist = length(wp - cameraPosition);
   float f = 1.0 - exp(-max(0.0, dist - 33.0) * uFogDensity * 1.25 * fogMult);
   f = max(f, 0.07 * fogMult);
@@ -47,6 +55,7 @@ vec3 underwater(vec3 albedo, vec3 N, vec3 wp, float causticAmt, float rim, float
   fogc = mix(fogc, uTopColor, smoothstep(-6.0, 0.0, wp.y) * 0.55);
   return mix(col, fogc, clamp(f, 0.0, 1.0));
 }
+vec3 underwater(vec3 albedo, vec3 N, vec3 wp, float causticAmt, float rim, float fogMult){ return underwaterX(albedo, N, wp, causticAmt, rim, fogMult, vec3(0.0)); }
 `;
 
 export const COMMON_VERT = /* glsl */`
