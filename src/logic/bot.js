@@ -24,7 +24,7 @@ export function botInput(sim, { miss = [], boostMin = 45 } = {}) {
   for (const e of sim.entities) {
     if (!e.alive) continue;
     const dx = e.x - x;
-    if (e.kind === 'net' && !e.cut && dx > -3 && dx < 22) { target = Math.abs(y - (e.ytop + 0.9)) < Math.abs(y - (e.ybot - 0.9)) ? e.ytop + 0.6 : e.ybot - 0.6; urgent = true; }
+    if (e.kind === 'net' && !e.cut && dx > -9 && dx < 24) { target = Math.abs(y - (e.ytop + 0.9)) < Math.abs(y - (e.ybot - 0.9)) ? e.ytop + 0.6 : e.ybot - 0.6; urgent = true; }
     if (e.kind === 'line' && dx > -3 && dx < 20) { target = e.yb - 1.6; urgent = true; }
     if (e.kind === 'plastic' && dx > 0 && dx < 12 && Math.abs(e.y - y) < 2.2) { target = e.y > y ? e.y - 2.6 : e.y + 2.6; urgent = true; }
     if (e.kind === 'drumline' && !e.used && dx > -3 && dx < 18) { target = e.baitY > -6 ? -10.2 : -2.3; urgent = true; }

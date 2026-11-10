@@ -67,10 +67,14 @@ export function buildLevel(seed = 11) {
         pick('battery', at(405), -7.2);
         break;
     }
-    // Prey: a school of salmon roughly every 70-95 units, kept clear of authored set pieces.
-    for (let dx = 28 + rnd() * 18; dx < 430; dx += 58 + rnd() * 22) {
-      if (authored.some(ax => Math.abs(ax - (a + dx)) < 14)) continue;
-      school(a + dx, -3.4 - rnd() * 7.6, 'salmon');
+    // Prey: a school of salmon roughly every 55-75 units, nudged clear of authored set pieces.
+    let last = -99;
+    for (let dx = 30 + rnd() * 14; dx < 425; dx += 55 + rnd() * 20) {
+      let px = dx;
+      for (const off of [0, 17, -17, 30, -30]) { if (!authored.some(ax => Math.abs(ax - (a + dx + off)) < 12)) { px = dx + off; break; } }
+      if (authored.some(ax => Math.abs(ax - (a + px)) < 12) || px - last < 40) continue;
+      last = px;
+      school(a + px, -3.4 - rnd() * 7.6, 'salmon');
     }
   }
   // Surfers: scenery on the surface (never prey). Placed near the beaches of the first two legs, a few later.

@@ -17,6 +17,7 @@ const ENERGY = { salmon: 6, tailor: 10, ray: 34 };
 const SHIP = { len: 38, draft: -3.4, speed: -4.2, propFromEnd: 4, propRx: 6.5, propRy: 4.4, propY: -3.6 };
 export const SHIP_DIMS = SHIP;
 const NEED_WIGGLES = 9;
+export const NET_HALF = 2.4; // matches the drawn panel (4.8 wide)
 
 const FACT_ON_SIGHT = { salmon: 'salmon', tailor: 'tailor', plastic: 'plastic', line: 'line', net: 'net', drumline: 'drumline', ship: 'ship', eac: 'eac' };
 const FACT_ON_PICKUP = { electro: 'electro', bait: 'bait', scent: 'scent', battery: 'battery' };
@@ -249,7 +250,7 @@ export class Sim {
           if (!this.tangle && !e.freed && px - BODY_BACK < e.x && px + BODY_FRONT > e.x && py + BODY_HALF_H > e.yb && py < 0.5) this.startTangle(e, 4, 'Fishing line');
           break;
         case 'net':
-          if (!this.tangle && !e.cut && px - BODY_BACK < e.x + 0.5 && px + BODY_FRONT > e.x - 0.5 && py - BODY_HALF_H < e.ytop && py + BODY_HALF_H > e.ybot) this.startTangle(e, 26, 'Shark net');
+          if (!this.tangle && !e.cut && px - BODY_BACK < e.x + NET_HALF && px + BODY_FRONT > e.x - NET_HALF && py - BODY_HALF_H < e.ytop && py + BODY_HALF_H > e.ybot) this.startTangle(e, 26, 'Shark net');
           break;
         case 'drumline':
           if (!e.used && Math.hypot(e.x - mouth.x, e.baitY - mouth.y) < e.r + 0.3) this.beginCaught(e);

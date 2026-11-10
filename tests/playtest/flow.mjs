@@ -1,0 +1,36 @@
+// Real-input flow check: keyboard play, pause, fact dismissal, faint/retry, ending. Prints PASS/FAIL lines.
+import { launch } from './harness.mjs';
+const h = await launch({ query: '', outDir: process.env.OUT ?? 'playtest-shots/flow' });
+const P = h.page, st = () => h.ev(() => __game.stats());
+let fails = 0; const ok = (c, m) => { console.log(c ? 'PASS' : 'FAIL', m); if (!c) fails++; };
+await h.wait(800);
+await P.click('#btn-start'); await h.wait(500);
+ok((await st()).state === 'intro', 'Start opens the tag-on intro');
+await P.keyboard.press('Enter'); await h.wait(300);
+ok((await st()).state === 'playing', 'Enter skips the intro');
+const y0 = (await st()).y;
+await P.keyboard.down('ArrowUp'); await h.wait(700); await P.keyboard.up('ArrowUp');
+ok((await st()).y > y0 + 1, 'Up arrow steers up');
+const e0 = (await st()).energy, x0 = (await st()).x;
+await P.keyboard.down('Space'); await h.wait(1200); await P.keyboard.up('Space');
+const s1 = await st(); ok(s1.x - x0 > 12 && s1.energy < e0 - 6, `Space boosts (moved ${(s1.x - x0).toFixed(1)}, energy ${e0.toFixed(0)}->${s1.energy.toFixed(0)})`);
+await P.keyboard.press('KeyP'); await h.wait(300);
+ok((await st()).state === 'paused', 'P pauses');
+await P.keyboard.press('KeyP'); await h.wait(300);
+ok(['playing', 'fact'].includes((await st()).state), 'P resumes');
+await h.ev(() => __game.fact('salmon')); await h.wait(2800);
+ok((await st()).state === 'fact' || (await h.ev(() => document.getElementById('factcard').classList.contains('in'))), 'fact card shows and slows the game');
+await P.keyboard.press('Space'); await h.wait(1200); await P.keyboard.press('Space'); await h.wait(800);
+ok((await st()).state !== 'fact', 'Space dismisses the fact card');
+await h.ev(() => { __game.sim.vitals.energy = 0.01; }); await h.wait(600);
+ok((await st()).state === 'resting', 'running out of energy rests on the seabed');
+await h.wait(4200);
+const s2 = await st(); ok(s2.state === 'playing' && s2.energy > 50, 'retry resumes with energy');
+await h.ev(() => __game.autorun()); await h.wait(600);
+ok((await st()).state === 'ending', 'finishing the run opens the ending');
+for (let i = 0; i < 3; i++) { await P.click('#end-next'); await h.wait(300); }
+ok(await h.ev(() => !document.getElementById('credits').classList.contains('hidden')), 'ending -> credits');
+await P.click('#cr-back'); await h.wait(300);
+ok(await h.ev(() => !document.getElementById('ending').classList.contains('hidden')), 'credits -> back to ending');
+const errs = h.errors.filter(e => !e.includes('404')); ok(errs.length === 0, 'no console errors ' + errs.join(' | '));
+await h.close(); process.exit(fails ? 1 : 0);

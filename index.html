@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Tagged! Bondi to Kiama</title>
+<meta name="description" content="Swim a tagged white shark from Bondi to Kiama and see how listening-station pings become data.">
+<link rel="stylesheet" href="styles.css">
+<script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.js","three/examples/jsm/":"./vendor/three/examples/jsm/"}}</script>
+</head>
+<body>
+<canvas id="gl" aria-label="Underwater game view"></canvas>
+<div id="vignette"></div><div id="sense-tint"></div><div id="hurt-flash"></div>
+
+<div id="hud" class="hidden">
+  <div class="hud-left">
+    <div class="meter" id="m-energy"><svg class="ico" viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="currentColor"/></svg><div class="bar"><i></i></div><b>100</b></div>
+    <div class="meter" id="m-oxy"><svg class="ico" viewBox="0 0 24 24"><path d="M4 7c4-2 12-2 16 0M4 12c4-2 12-2 16 0M4 17c4-2 12-2 16 0" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg><div class="bar"><i></i></div><b>100</b></div>
+    <div class="chips"><span class="chip" id="c-pings"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.6" fill="currentColor"/><path d="M7 7a7 7 0 0 0 0 10M17 7a7 7 0 0 1 0 10" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg> Pings <b>0</b></span>
+      <span class="chip hidden" id="c-sense">Sense <b>0</b></span><span class="chip hidden" id="c-frenzy">Frenzy x2</span><span class="chip hidden" id="c-battery">Next ping x2</span><span class="chip hidden" id="c-scent">Scent</span></div>
+  </div>
+  <div class="hud-mid"><div id="strip"></div><div id="strip-note">Game simplification: distances and swim speeds are scaled.</div></div>
+  <div class="hud-right"><div id="score">0</div><div class="btnrow"><button id="btn-mute" aria-label="Mute sound" title="Mute">&#128266;</button><button id="btn-pause" aria-label="Pause" title="Pause (P)">&#10073;&#10073;</button></div></div>
+  <div id="legbanner"></div>
+  <div id="notif" aria-live="polite"></div>
+  <div id="tangle" class="hidden">Tangled! Mash Up and Down (or tap) to wiggle free <div class="bar"><i></i></div></div>
+  <div id="whisper"></div>
+</div>
+
+<div id="factcard" class="hidden" role="status"></div>
+<div id="touch-zone"></div>
+<div id="touch-btns"><button id="btn-sense">SENSE</button><button id="btn-boost">BOOST</button></div>
+
+<div id="intro" class="screen hidden"><div id="intro-cap"></div><button id="intro-skip" class="ghost">Skip</button></div>
+<div id="rest" class="screen hidden"><div><h2 id="rest-title">Resting on the seabed</h2><p id="rest-text"></p></div></div>
+<div id="caught" class="screen hidden"><div><h2>SMART drumline</h2><p id="caught-text">Hauled alongside. Scientists read your tag, then release you further offshore.</p><p class="bonus">+1 bonus data point</p></div></div>
+
+<div id="title" class="screen">
+  <div class="title-card">
+    <p class="kicker">Year 8 Science &middot; Data science (8.1.3)</p>
+    <h1>Tagged!</h1><h2>Bondi to Kiama</h2>
+    <p class="lead">You are a young white shark with an acoustic tag. Swim south past six real SharkSmart listening stations. Every ping you trigger becomes a row of data.</p>
+    <div class="row"><button id="btn-start" class="primary">Start</button><button id="btn-how" class="ghost">How to play</button></div>
+    <p class="best" id="best"></p>
+    <div class="howto hidden" id="howto"></div>
+    <label class="opt"><input type="checkbox" id="opt-reduce"> Reduced motion (no screen shake)</label>
+    <p class="fine"><a href="#" id="link-credits">Data credits</a></p>
+  </div>
+</div>
+
+<div id="pause" class="screen hidden"><div class="card"><h2>Paused</h2><div class="row"><button id="p-resume" class="primary">Resume</button><button id="p-quit" class="ghost">Quit to title</button></div><label class="opt"><input type="checkbox" id="opt-reduce2"> Reduced motion</label></div></div>
+
+<div id="ending" class="screen hidden">
+  <div class="end-wrap">
+    <div class="end-head"><h2 id="end-title">Your data</h2><div class="steps" id="end-steps"></div></div>
+    <div class="end-body"><div class="mapbox"><canvas id="endmap" width="640" height="760"></canvas><div class="legend" id="end-legend"></div></div>
+      <div class="end-side" id="end-side"></div></div>
+    <div class="end-foot"><button id="end-back" class="ghost">Back</button><button id="end-next" class="primary">Next</button></div>
+  </div>
+</div>
+
+<div id="credits" class="screen hidden"><div class="card wide" id="credits-body"></div></div>
+<div id="rotate" class="screen hidden"><div class="card"><h2>Turn your device sideways</h2><p>Tagged! plays best in landscape.</p></div></div>
+<div id="loading" class="screen"><p>Loading the ocean&hellip;</p></div>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

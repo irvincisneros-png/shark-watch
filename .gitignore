@@ -2,3 +2,4 @@ node_modules
 tools/.cache
 .DS_Store
 playtest-shots/*.tmp
+playtest-shots
