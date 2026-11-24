@@ -30,6 +30,7 @@ h1{font-size:clamp(56px,11vw,104px);margin:0;line-height:.95;letter-spacing:.02e
 .card{background:var(--panel2);border:2px solid var(--line);border-radius:18px;padding:22px 28px;max-width:560px}
 .card.wide{max-width:760px;text-align:left;max-height:88vh;overflow:auto;user-select:text}
 #pause,#rest,#caught,#intro,#credits,#rotate{background:rgba(2,20,32,.55)}
+#rotate{z-index:60;background:#021420;padding:24px}/* sits above the title and intro so the prompt never overlaps them */
 #intro{background:linear-gradient(transparent 60%,rgba(2,20,32,.7));align-items:flex-end;pointer-events:none}
 #intro-cap{font-size:clamp(18px,2.6vw,26px);max-width:760px;padding:18px 24px 38px;line-height:1.4;text-shadow:0 2px 6px #000;transition:opacity .5s}
 #intro-skip{position:absolute;right:18px;bottom:18px;pointer-events:auto}
